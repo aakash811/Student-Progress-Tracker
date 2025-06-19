@@ -56,7 +56,7 @@ root/
 
 ## 📷 Demo Preview
 
-- Walkthrough Video: [YouTube Link or Local Path]
+- Walkthrough Video: https://www.loom.com/share/ed551d3497504b9483b3f057c23e2362?sid=d0c5bdbc-3418-483e-b0f5-8f358cef05b2
 - Sample Student Dashboard
 - Submission Heatmap
 - Contest Rating Chart
