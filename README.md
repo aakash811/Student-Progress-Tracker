@@ -37,18 +37,20 @@ A full-stack MERN application to track and analyze students' competitive program
 ---
 
 ## 📁 Folder Structure
-
+```
 root/
 ├── frontend/ # React UI
 │ ├── src/
 │ │ ├── components/ # UI components
 │ │ └── pages/ # Pages and routing
+│
 ├── backend/
 │ ├── controllers/ # API logic
 │ ├── routes/ # Express routes
-│ ├── services/ # Codeforces service
+│ ├── services/ # Codeforces API service
 │ ├── cron/ # Codeforces sync cron job
-│ └── models/ # MongoDB models
+│ └── models/ # MongoDB data models
+```
 
 ---
 
