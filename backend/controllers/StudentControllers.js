@@ -56,6 +56,20 @@ exports.updateStudent = async(req, res)=>{
     }
 }
 
+exports.toggleEmailReminder = async (req, res) => {
+  try {
+    const student = await Student.findByIdAndUpdate(
+      req.params.id,
+      { emailRemindersDisabled: req.body.emailRemindersDisabled },
+      { new: true }
+    );
+    res.json(student);
+  } catch (err) {
+    console.error("Error toggling email reminder:", err);
+    res.status(500).json({ error: "Failed to toggle reminder" });
+  }
+};
+
 exports.deleteStudent = async(req, res)=>{
     try{
         const deleted = await Student.findByIdAndDelete(req.params.id);

@@ -1,6 +1,7 @@
 import AddStudentDialog from "@/components/AddStudentDialog";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import axios from "axios";
 import { Trash2 } from "lucide-react";
@@ -34,6 +35,23 @@ export default function StudentTable() {
         }
     };
 
+    const toggleEmailReminder = async (id, currentDisabled) => {
+        try {
+            await axios.put(`http://localhost:5000/api/students/${id}/toggle-reminder`, {
+            emailRemindersDisabled: !currentDisabled,
+            });
+            setStudents(prev =>
+                prev.map(s =>
+                    s._id === id ? { ...s, emailRemindersDisabled: !currentDisabled } : s
+                )
+            );
+        } catch (err) {
+            console.error("Failed to toggle email reminder:", err);
+            alert("Error toggling email reminder");
+        }
+    };
+
+
     return (
         <div className="p-6">
             <div className="flex justify-end mb-4">
@@ -58,6 +76,7 @@ export default function StudentTable() {
                             <TableHead className="text-center">CF Handle</TableHead>
                             <TableHead className="text-center">Current Rating</TableHead>
                             <TableHead className="text-center">Max Rating</TableHead>
+                            <TableHead className="text-center">Email Reminders</TableHead>
                             <TableHead className="text-center">Last Synced</TableHead>
                             <TableHead className="text-center">Actions</TableHead>
                         </TableRow>
@@ -71,6 +90,14 @@ export default function StudentTable() {
                                 <TableCell className="text-center">{s.codeforcesHandle}</TableCell>
                                 <TableCell className="text-center">{s.currRating}</TableCell>
                                 <TableCell className="text-center">{s.maxRating}</TableCell>
+                                <TableCell className="text-center">
+                                <Switch
+                                    checked={!s.emailRemindersDisabled}
+                                    onCheckedChange={() =>
+                                        toggleEmailReminder(s._id, s.emailRemindersDisabled)
+                                    }
+                                />
+                                </TableCell>
                                 <TableCell className="text-center">{new Date(s.lastSyncedAt).toLocaleString()}</TableCell>
                                 <TableCell className="flex gap-1 justify-center">
                                     <Link to={`/student/${s.codeforcesHandle}`}>
