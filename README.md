@@ -40,16 +40,15 @@ A full-stack MERN application to track and analyze students' competitive program
 
 root/
 ├── frontend/ # React UI
-│   └── src/
-│       ├── components/ # UI components
-│       └── pages/ # Pages and routing
-└── backend/
-    ├── controllers/ # API logic
-    ├── routes/ # Express routes
-    ├── services/ # Codeforces service
-    ├── cron/ # Codeforces sync cron job
-    └── models/ # MongoDB models
-
+│ ├── src/
+│ │ ├── components/ # UI components
+│ │ └── pages/ # Pages and routing
+├── backend/
+│ ├── controllers/ # API logic
+│ ├── routes/ # Express routes
+│ ├── services/ # Codeforces service
+│ ├── cron/ # Codeforces sync cron job
+│ └── models/ # MongoDB models
 
 ---
 
