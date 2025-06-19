@@ -76,51 +76,45 @@ root/
 ```bash
 git clone https://github.com/yourusername/student-progress-tracker.git
 cd student-progress-tracker
+```
 
-
-2. Setup the Backend
-bash
-Copy
-Edit
+### 2. Setup the Backend
+```bash
 cd backend
 Create a .env file inside the backend/ directory with the following variables:
-
-env
-Copy
-Edit
+```        
+```env
 PORT=5000
 MONGODB_URI=your_mongodb_connection_string
 CODEFORCES_API_BASE=https://codeforces.com/api
 EMAIL_USER=your_email@example.com
 EMAIL_PASS=your_email_password
+```
 ⚠️ Note: Never commit .env files to version control.
 
 Install backend dependencies:
 
-bash
-Copy
-Edit
+```bash
 npm install
+```
+
 Start the backend server:
-
-bash
-Copy
-Edit
+```bash
 npx nodemon index.js
-3. Setup the Frontend
-bash
-Copy
-Edit
+```
+
+### 1. Setup the Frontend
+```bash
 cd ../frontend
+```
 Install frontend dependencies:
-
-bash
-Copy
-Edit
+```bash
 npm install
-Start the frontend development server:
+```
 
-bash
-Copy
-Edit
+Start the frontend development server:
+```bash
 npm run dev
+```
+
+Now open your browser at http://localhost:5173 to view the app.
