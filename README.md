@@ -81,8 +81,9 @@ cd student-progress-tracker
 ### 2. Setup the Backend
 ```bash
 cd backend
-Create a .env file inside the backend/ directory with the following variables:
 ```        
+
+Create a .env file inside the backend/ directory with the following variables:
 ```env
 PORT=5000
 MONGODB_URI=your_mongodb_connection_string
