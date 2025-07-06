@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import StudentTable from "./pages/studentTable";
+import StudentTable from "./pages/StudentTable";
 import { ThemeProvider } from "@/components/theme-provider"
 import StudentStats from "./pages/StudentStats";
 
