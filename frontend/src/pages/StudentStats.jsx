@@ -13,6 +13,9 @@ import { Tooltip as ReactTooltip } from 'react-tooltip'
 import { ModeToggle } from "@/components/mode-toggle";
 import { useTheme } from "@/components/theme-provider";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         const data = payload[0].payload;
@@ -49,10 +52,10 @@ const StudentStats = () =>{
     useEffect(() =>{
         const fetchStats = async () => {
             try{
-                const res = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/codeforces/stats/${handle}?days=${selectedDays}`);
+                const res = await axios.get(`${API_BASE}/api/codeforces/stats/${handle}?days=${selectedDays}`);
                 console.log("Fetched stats:", res.data);
                 setStats(res.data);
-                const contestRes = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/codeforces/contest/${handle}?days=${selectedContestDays}`);
+                const contestRes = await axios.get(`${API_BASE}/api/codeforces/contest/${handle}?days=${selectedContestDays}`);
                 console.log("Fetched contest history:", contestRes.data.contestStats);
                 setContestData(contestRes.data.contestStats || []);
                 setLoading(false);

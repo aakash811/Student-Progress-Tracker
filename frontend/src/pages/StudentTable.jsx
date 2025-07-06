@@ -8,6 +8,9 @@ import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+
 export default function StudentTable() {
     const [students, setStudents] = useState([]);
     const [editStudent, setEditStudent] = useState(null);
@@ -20,7 +23,7 @@ export default function StudentTable() {
     const fetchStudents = async () => {
         try {
             setLoading(true);
-            const res = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/students`);
+            const res = await axios.get(`${API_BASE}/api/students`);
             setStudents(res.data);
         } catch (err) {
             console.error("Error fetching students:", err);
@@ -32,7 +35,7 @@ export default function StudentTable() {
     const deleteStudent = async (id) => {
         if (!window.confirm("Are you sure you want to delete this student?")) return;
         try {
-            await axios.delete(`${process.env.REACT_APP_API_BASE_URL}/api/students/${id}`);
+            await axios.delete(`${API_BASE}/api/students/${id}`);
             fetchStudents(); // refresh table
         } catch (err) {
             console.error("Error deleting student:", err);
@@ -41,7 +44,7 @@ export default function StudentTable() {
 
     const toggleEmailReminder = async (id, currentDisabled) => {
         try {
-            await axios.put(`${process.env.REACT_APP_API_BASE_URL}/api/students/${id}/toggle-reminder`, {
+            await axios.put(`${API_BASE}/api/students/${id}/toggle-reminder`, {
             emailRemindersDisabled: !currentDisabled,
             });
             setStudents(prev =>

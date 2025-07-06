@@ -11,6 +11,8 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import axios from 'axios';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
 const AddStudentDialog = ({ onStudentAdded, editStudent, setEditStudent }) => {
   const [open, setOpen] = React.useState(false);
   const [form, setForm] = React.useState({
@@ -50,9 +52,9 @@ const AddStudentDialog = ({ onStudentAdded, editStudent, setEditStudent }) => {
     setLoading(true);
     try {
         if (editStudent?._id) {
-            await axios.put(`${process.env.REACT_APP_API_BASE_URL}/api/students/${editStudent._id}`, form);
+            await axios.put(`${API_BASE}/api/students/${editStudent._id}`, form);
         } else {
-            await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/students`, form);
+            await axios.post(`${API_BASE}/api/students`, form);
         }
         onStudentAdded();
         setOpen(false);
