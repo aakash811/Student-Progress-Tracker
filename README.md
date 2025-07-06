@@ -56,7 +56,7 @@ root/
 
 ## 📷 Demo Preview
 
-- Walkthrough Video: [![Watch the demo](https://cdn.loom.com/sessions/thumbnails/ed551d3497504b9483b3f057c23e2362-with-play.gif)](https://www.loom.com/share/ed551d3497504b9483b3f057c23e2362?sid=d0c5bdbc-3418-483e-b0f5-8f358cef05b2)
+- Walkthrough Video: [![Watch the demo](https://cdn.loom.com/sessions/thumbnails/ed551d3497504b9483b3f057c23e2362-128251a3f29b14c9.mp4)](https://www.loom.com/share/ed551d3497504b9483b3f057c23e2362?sid=d0c5bdbc-3418-483e-b0f5-8f358cef05b2)
 - Students Table: ![Student Table](/frontend/src/assets/Students-Table.png)
 - Sample Student Dashboard: ![Student Dashboard](/frontend/src/assets/Student-Details.png)
 - Contest Rating Chart: ![Student Graph](/frontend/src/assets/Student-Graph.png)
