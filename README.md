@@ -56,10 +56,10 @@ root/
 
 ## 📷 Demo Preview
 
-- Walkthrough Video: https://www.loom.com/share/ed551d3497504b9483b3f057c23e2362?sid=d0c5bdbc-3418-483e-b0f5-8f358cef05b2
-- Sample Student Dashboard
-- Submission Heatmap
-- Contest Rating Chart
+- Walkthrough Video: [![Watch the demo](assets/Student-Table.png)](https://www.loom.com/share/ed551d3497504b9483b3f057c23e2362?sid=d0c5bdbc-3418-483e-b0f5-8f358cef05b2)
+- Students Table: ![Student Table](assets/Student-Table.png)
+- Sample Student Dashboard: ![Student Dashboard](assets/Student-Details.png)
+- Contest Rating Chart: ![Student Graph](assets/Student-Graph.png)
 
 ---
 
