@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 export default function StudentTable() {
     const [students, setStudents] = useState([]);
     const [editStudent, setEditStudent] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchStudents();
@@ -18,10 +19,13 @@ export default function StudentTable() {
 
     const fetchStudents = async () => {
         try {
+            setLoading(true);
             const res = await axios.get("http://localhost:5000/api/students");
             setStudents(res.data);
         } catch (err) {
             console.error("Error fetching students:", err);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -81,43 +85,52 @@ export default function StudentTable() {
                             <TableHead className="text-center">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
-                    <TableBody>
-                        {students.map((s) => (
-                            <TableRow key={s._id}>
-                                <TableCell className="text-center">{s.name}</TableCell>
-                                <TableCell className="text-center">{s.email}</TableCell>
-                                <TableCell className="text-center">{s.phoneNo}</TableCell>
-                                <TableCell className="text-center">{s.codeforcesHandle}</TableCell>
-                                <TableCell className="text-center">{s.currRating}</TableCell>
-                                <TableCell className="text-center">{s.maxRating}</TableCell>
-                                <TableCell className="text-center">
-                                <Switch
-                                    checked={!s.emailRemindersDisabled}
-                                    onCheckedChange={() =>
-                                        toggleEmailReminder(s._id, s.emailRemindersDisabled)
-                                    }
-                                />
-                                </TableCell>
-                                <TableCell className="text-center">{new Date(s.lastSyncedAt).toLocaleString()}</TableCell>
-                                <TableCell className="flex gap-1 justify-center">
-                                    <Link to={`/student/${s.codeforcesHandle}`}>
-                                        <Button variant="outline">View</Button>
-                                    </Link>
-                                    <Button variant="outline" onClick={() => setEditStudent(s)}>
-                                        Edit
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        className="text-red-500 hover:text-red-700"
-                                        size="icon"
-                                        onClick={() => deleteStudent(s._id)}
-                                    >
-                                        <Trash2 className="w-5 h-5" />
-                                    </Button>
-                                </TableCell>
+                    {loading ? (
+                       <TableBody>
+                            <TableRow>
+                            <TableCell colSpan={9} className="py-12 text-center">
+                                <span className="text-muted-foreground text-[16px]">Loading students...</span>
+                            </TableCell>
                             </TableRow>
-                        ))}
-                    </TableBody>
+                        </TableBody>
+                        ) : (<TableBody>
+                            {students.map((s) => (
+                                <TableRow key={s._id}>
+                                    <TableCell className="text-center">{s.name}</TableCell>
+                                    <TableCell className="text-center">{s.email}</TableCell>
+                                    <TableCell className="text-center">{s.phoneNo}</TableCell>
+                                    <TableCell className="text-center">{s.codeforcesHandle}</TableCell>
+                                    <TableCell className="text-center">{s.currRating}</TableCell>
+                                    <TableCell className="text-center">{s.maxRating}</TableCell>
+                                    <TableCell className="text-center">
+                                    <Switch
+                                        checked={!s.emailRemindersDisabled}
+                                        onCheckedChange={() =>
+                                            toggleEmailReminder(s._id, s.emailRemindersDisabled)
+                                        }
+                                    />
+                                    </TableCell>
+                                    <TableCell className="text-center">{new Date(s.lastSyncedAt).toLocaleString()}</TableCell>
+                                    <TableCell className="flex gap-1 justify-center">
+                                        <Link to={`/student/${s.codeforcesHandle}`}>
+                                            <Button variant="outline">View</Button>
+                                        </Link>
+                                        <Button variant="outline" onClick={() => setEditStudent(s)}>
+                                            Edit
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            className="text-red-500 hover:text-red-700"
+                                            size="icon"
+                                            onClick={() => deleteStudent(s._id)}
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    )}
                 </Table>
             </div>
         </div>

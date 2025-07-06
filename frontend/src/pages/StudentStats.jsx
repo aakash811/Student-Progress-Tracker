@@ -74,19 +74,16 @@ const StudentStats = () =>{
             </div>
             <h1 className="text-2xl font-semibold">Stats for {handle}</h1>
 
-            <div className="flex gap-2 mb-4">
-                {[7, 30, 90].map((days) => (
-                    <button
-                    key={days}
-                    onClick={() => setSelectedDays(days)}
-                    className={`px-4 py-2 rounded-md border ${
-                        selectedDays === days ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 border-indigo-600'
-                    } transition`}
-                    >
-                    Last {days} Days
-                    </button>
-                ))}
-            </div>
+            <Select onValueChange={setSelectedDays} defaultValue="30">
+            <SelectTrigger className="w-32">
+                <SelectValue placeholder="Filter" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="30">Last 7 Days</SelectItem>
+                <SelectItem value="90">Last 30 Days</SelectItem>
+                <SelectItem value="365">Last 90 Days</SelectItem>
+            </SelectContent>
+            </Select>
 
             <Card>
                 <CardContent className="p-4 space-y-2">
@@ -150,6 +147,7 @@ const StudentStats = () =>{
                 <SelectItem value="30">Last 30 Days</SelectItem>
                 <SelectItem value="90">Last 90 Days</SelectItem>
                 <SelectItem value="365">Last 365 Days</SelectItem>
+                <SelectItem value="all">All Time</SelectItem>
             </SelectContent>
             </Select>
 

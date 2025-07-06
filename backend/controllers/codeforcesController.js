@@ -91,42 +91,45 @@ exports.getCodeforcesStats = async (req, res) => {
 exports.getContestStats = async (req, res) => {
     try {
         const { handle } = req.params;
-        const days = parseInt(req.query.days) || 90;
+        const days = req.query.days;
 
         const student = await Student.findOne({ codeforcesHandle: handle });
         if (!student) {
             return res.status(404).json({ error: "Student not found" });
         }
 
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - days);
+        let filteredContests = student.contestData || [];
+
+        if (days !== 'all') {
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
+            filteredContests = filteredContests.filter(c => {
+                const date = new Date(c.ratingUpdateTimeSeconds * 1000);
+                return date >= cutoffDate;
+            });
+        }
 
         const contestStats = await Promise.all(
-        (student.contestData || [])
-            .filter(c => {
-            const date = new Date(c.ratingUpdateTimeSeconds * 1000);
-            return date >= cutoffDate;
-            })
-            .map(async (c) => {
-            const date = new Date(c.ratingUpdateTimeSeconds * 1000).toISOString().split('T')[0];
-            const totalProblems = await getProblemsInContest(c.contestId);
-            const solved = getSolvedInContest(student.submissions || [], c.contestId);
-            return {
-                contestId: c.contestId,
-                contestName: c.contestName,
-                date,
-                rank: c.rank,
-                oldRating: c.oldRating,
-                newRating: c.newRating,
-                ratingChange: c.newRating - c.oldRating,
-                unsolvedProblems: Math.max(totalProblems - solved, 0),
-            };
+            filteredContests.map(async (c) => {
+                const date = new Date(c.ratingUpdateTimeSeconds * 1000).toISOString().split('T')[0];
+                const totalProblems = await getProblemsInContest(c.contestId);
+                const solved = getSolvedInContest(student.submissions || [], c.contestId);
+                return {
+                    contestId: c.contestId,
+                    contestName: c.contestName,
+                    date,
+                    rank: c.rank,
+                    oldRating: c.oldRating,
+                    newRating: c.newRating,
+                    ratingChange: c.newRating - c.oldRating,
+                    unsolvedProblems: Math.max(totalProblems - solved, 0),
+                };
             })
         );
+
         res.json({ contestStats });
     } catch (err) {
         console.error("Error in getContestStats:", err);
         res.status(500).json({ error: "Internal server error" });
     }
-}
-
+};
