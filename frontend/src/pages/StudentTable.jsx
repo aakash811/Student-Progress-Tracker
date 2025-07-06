@@ -20,7 +20,7 @@ export default function StudentTable() {
     const fetchStudents = async () => {
         try {
             setLoading(true);
-            const res = await axios.get("http://localhost:5000/api/students");
+            const res = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/students`);
             setStudents(res.data);
         } catch (err) {
             console.error("Error fetching students:", err);
@@ -32,7 +32,7 @@ export default function StudentTable() {
     const deleteStudent = async (id) => {
         if (!window.confirm("Are you sure you want to delete this student?")) return;
         try {
-            await axios.delete(`http://localhost:5000/api/students/${id}`);
+            await axios.delete(`${process.env.REACT_APP_API_BASE_URL}/api/students/${id}`);
             fetchStudents(); // refresh table
         } catch (err) {
             console.error("Error deleting student:", err);
@@ -41,7 +41,7 @@ export default function StudentTable() {
 
     const toggleEmailReminder = async (id, currentDisabled) => {
         try {
-            await axios.put(`http://localhost:5000/api/students/${id}/toggle-reminder`, {
+            await axios.put(`${process.env.REACT_APP_API_BASE_URL}/api/students/${id}/toggle-reminder`, {
             emailRemindersDisabled: !currentDisabled,
             });
             setStudents(prev =>

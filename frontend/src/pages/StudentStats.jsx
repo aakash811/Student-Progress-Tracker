@@ -49,10 +49,10 @@ const StudentStats = () =>{
     useEffect(() =>{
         const fetchStats = async () => {
             try{
-                const res = await axios.get(`http://localhost:5000/api/codeforces/stats/${handle}?days=${selectedDays}`);
+                const res = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/codeforces/stats/${handle}?days=${selectedDays}`);
                 console.log("Fetched stats:", res.data);
                 setStats(res.data);
-                const contestRes = await axios.get(`http://localhost:5000/api/codeforces/contest/${handle}?days=${selectedContestDays}`);
+                const contestRes = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/codeforces/contest/${handle}?days=${selectedContestDays}`);
                 console.log("Fetched contest history:", contestRes.data.contestStats);
                 setContestData(contestRes.data.contestStats || []);
                 setLoading(false);

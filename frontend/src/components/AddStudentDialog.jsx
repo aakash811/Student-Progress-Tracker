@@ -50,9 +50,9 @@ const AddStudentDialog = ({ onStudentAdded, editStudent, setEditStudent }) => {
     setLoading(true);
     try {
         if (editStudent?._id) {
-            await axios.put(`http://localhost:5000/api/students/${editStudent._id}`, form);
+            await axios.put(`${process.env.REACT_APP_API_BASE_URL}/api/students/${editStudent._id}`, form);
         } else {
-            await axios.post("http://localhost:5000/api/students", form);
+            await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/students`, form);
         }
         onStudentAdded();
         setOpen(false);
