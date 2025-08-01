@@ -16,8 +16,11 @@ app.use('/api/students', studentRoutes);
 app.use('/api/codeforces', codeforcesRoutes);
 app.use('/api/inactivity', inactivityRoutes);
 
-const scheduleCodeforcesSync = require('./cron/codeforcesSyncCron');
-scheduleCodeforcesSync();
+const cronRoutes = require('./routes/cron');
+app.use('/cron', cronRoutes);
+
+// const scheduleCodeforcesSync = require('./cron/codeforcesSyncCron');
+// scheduleCodeforcesSync();
 
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
