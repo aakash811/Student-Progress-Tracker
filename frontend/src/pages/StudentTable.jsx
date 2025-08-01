@@ -23,7 +23,15 @@ export default function StudentTable() {
     const fetchStudents = async () => {
         try {
             setLoading(true);
-            const res = await axios.get(`${API_BASE}/api/students`);
+            const res = await axios.get(`${API_BASE}/api/students`, {
+            headers: {
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache"
+            },
+            params: {
+                t: Date.now() // cache buster
+            }
+            });
             setStudents(res.data);
         } catch (err) {
             console.error("Error fetching students:", err);
