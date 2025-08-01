@@ -33,6 +33,7 @@ export default function StudentTable() {
             }
             });
             setStudents(res.data);
+            console.log("Fetched students:", res.data);
         } catch (err) {
             console.error("Error fetching students:", err);
         } finally {
