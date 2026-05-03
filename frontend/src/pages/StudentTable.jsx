@@ -32,7 +32,7 @@ export default function StudentTable() {
                 t: Date.now() // cache buster
             }
             });
-            setStudents(res.data);
+            setStudents(Array.isArray(res.data) ? res.data : res.data.students || []);
             console.log("Fetched students:", res.data);
         } catch (err) {
             console.error("Error fetching students:", err);
