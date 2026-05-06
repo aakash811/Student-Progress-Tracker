@@ -1,24 +1,73 @@
-const { parse } = require("dotenv");
 const Student = require("../models/Student");
 const codeforcesService = require("../services/codeforcesService");
-const { subDays } = require("date-fns");
 const axios = require("axios");
+const { Redis } = require("@upstash/redis");
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 const getLastActiveDate = (submissions) => {
-    const LastSubmission = submissions
-        .filter(sub => sub.verdict === 'OK')
-        .sort((a, b) => b.creationTimeSeconds * 1000 - a.creationTimeSeconds * 1000)[0];
+  const last = submissions
+    .filter((sub) => sub.verdict === "OK")
+    .sort((a, b) => b.creationTimeSeconds - a.creationTimeSeconds)[0];
+  return last ? new Date(last.creationTimeSeconds * 1000) : null;
+};
 
-    return LastSubmission ? new Date(LastSubmission.creationTimeSeconds * 1000) : null;
-}
+// Contest problems never change once a contest ends — cache forever (7 days TTL)
+const getProblemsInContest = async (contestId) => {
+  const cacheKey = `cf:contest-problems:${contestId}`;
 
-const getProblemsInContest = async(contestId) => {
-    try{
-        const res = await axios.get(`https://codeforces.com/api/contest.standings?contestId=${contestId}&from=1&count=1000`);
-        // console.log(res.data.result.problems.length);
-        return res.data.result.problems.length;
+  try {
+    const cached = await redis.get(cacheKey);
+    if (cached !== null) {
+      return cached;
+    }
   } catch (err) {
-    console.error("Failed to fetch contest problems:", err.message);
+    console.warn(`[Cache] Redis GET failed for ${cacheKey}:`, err.message);
+  }
+
+  try {
+    const res = await axios.get(
+      `https://codeforces.com/api/contest.standings`,
+      {
+        params: {
+          contestId,
+          from: 1,
+          count: 1,
+        },
+      },
+    );
+
+    if (res.data.status !== "OK") {
+      return 0;
+    }
+    const count = res.data.result?.problems?.length || 0;
+
+    try {
+      await redis.set(cacheKey, count, {
+        ex: 60 * 60 * 24 * 7,
+      });
+    } catch (err) {
+      console.warn(`[Cache] Redis SET failed for ${cacheKey}:`, err.message);
+    }
+    return count;
+  } catch (err) {
+    if (err.response?.status !== 400) {
+      console.error(
+        `Failed to fetch contest problems for ${contestId}:`,
+        err.message,
+      );
+    }
+    try {
+      await redis.set(cacheKey, 0, {
+        ex: 60 * 60 * 6,
+      });
+    } catch {}
+
     return 0;
   }
 };
@@ -33,103 +82,174 @@ const getSolvedInContest = (submissions, contestId) => {
   return solvedSet.size;
 };
 
+// ── Controllers ───────────────────────────────────────────────────────────────
+
 exports.syncCodeforcesData = async (req, res) => {
-    try {
-        const hour = new Date().getHours();
-        if (hour >= 8 && hour < 22) {
-            return res.status(429).json({ error: "Real-time sync not allowed during user hours (8 AM - 10 PM)." });
-        }
+  try {
+    const handle = req.params.handle;
 
-        const handle = req.params.handle;
-        const userInfo = await codeforcesService.fetchUserInfo(handle);
-        const userContest = await codeforcesService.fetchUserContest(handle);
-        const userSubmission = await codeforcesService.fetchUserSubmission(handle);
+    // Invalidate cache so sync always fetches fresh data
+    await codeforcesService.invalidateUserCache(handle);
 
-        // console.log(userInfo);
+    const [userInfo, userContest, userSubmission] = await Promise.all([
+      codeforcesService.fetchUserInfo(handle),
+      codeforcesService.fetchUserContest(handle),
+      codeforcesService.fetchUserSubmission(handle),
+    ]);
 
-        const updateStudent = await Student.findOneAndUpdate(
-            { codeforcesHandle: handle },
-            {
-                currRating: userInfo.rating || 0,
-                rank: userInfo.rank || 'Newbie',
-                maxRating: userInfo.maxRating || 0,
-                lastSyncedAt: new Date(),
-                contestData: userContest,
-                submissions: userSubmission,
-                lastActiveAt: getLastActiveDate(userSubmission)
-            },
-            {new: true}
-        );
+    const updatedStudent = await Student.findOneAndUpdate(
+      { codeforcesHandle: handle },
+      {
+        currRating: userInfo.rating || 0,
+        rank: userInfo.rank || "Newbie",
+        maxRating: userInfo.maxRating || 0,
+        lastSyncedAt: new Date(),
+        contestData: userContest,
+        submissions: userSubmission,
+        lastActiveAt: getLastActiveDate(userSubmission),
+      },
+      { new: true },
+    );
 
-        if(!updateStudent) {
-            return res.status(404).json({ error: "No student found with the given Codeforces handle" });
-        }
-
-        res.json({
-            message: "Codeforces data synced successfully",
-            student: updateStudent
-        })
-    } catch (err) {
-        console.error("Error syncing Codeforces data:", err);
-        res.status(500).json({ error: "Failed to sync Codeforces data" });
+    if (!updatedStudent) {
+      return res
+        .status(404)
+        .json({ error: "No student found with the given Codeforces handle" });
     }
+
+    res.json({
+      message: "Codeforces data synced successfully",
+      student: updatedStudent,
+    });
+  } catch (err) {
+    console.error("Error syncing Codeforces data:", err);
+    res.status(500).json({ error: "Failed to sync Codeforces data" });
+  }
 };
 
 exports.getCodeforcesStats = async (req, res) => {
-    try {
-        const handle = req.params.handle;
-        const days = parseInt(req.query.days) || 30;
-
-        const userStats = await codeforcesService.computeUserStats(handle, days);
-        res.json(userStats);
-    } catch (err) {
-        console.error("Error computing user stats:", err);
-        res.status(500).json({ error: "Failed to compute user stats" });
-    }
+  try {
+    const handle = req.params.handle;
+    const days = req.query.days === "all" ? "all" : parseInt(req.query.days) || 30;
+    const userStats = await codeforcesService.computeUserStats(handle, days);
+    res.json(userStats);
+  } catch (err) {
+    console.error("Error computing user stats:", err);
+    res.status(500).json({ error: "Failed to compute user stats" });
+  }
 };
 
 exports.getContestStats = async (req, res) => {
+  try {
+    const { handle } = req.params;
+    const days = req.query.days || "all";
+
+    // FULL RESPONSE CACHE
+    const fullCacheKey = `cf:contest-history:${handle}:${days}`;
+
     try {
-        const { handle } = req.params;
-        const days = req.query.days;
+      const cached = await redis.get(fullCacheKey);
 
-        const student = await Student.findOne({ codeforcesHandle: handle });
-        if (!student) {
-            return res.status(404).json({ error: "Student not found" });
-        }
+      if (cached) {
+        console.log(`[Cache HIT] ${fullCacheKey}`);
+        return res.json(cached);
+      }
 
-        let filteredContests = student.contestData || [];
-
-        if (days !== 'all') {
-            const cutoffDate = new Date();
-            cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
-            filteredContests = filteredContests.filter(c => {
-                const date = new Date(c.ratingUpdateTimeSeconds * 1000);
-                return date >= cutoffDate;
-            });
-        }
-
-        const contestStats = await Promise.all(
-            filteredContests.map(async (c) => {
-                const date = new Date(c.ratingUpdateTimeSeconds * 1000).toISOString().split('T')[0];
-                const totalProblems = await getProblemsInContest(c.contestId);
-                const solved = getSolvedInContest(student.submissions || [], c.contestId);
-                return {
-                    contestId: c.contestId,
-                    contestName: c.contestName,
-                    date,
-                    rank: c.rank,
-                    oldRating: c.oldRating,
-                    newRating: c.newRating,
-                    ratingChange: c.newRating - c.oldRating,
-                    unsolvedProblems: Math.max(totalProblems - solved, 0),
-                };
-            })
-        );
-
-        res.json({ contestStats });
+      console.log(`[Cache MISS] ${fullCacheKey}`);
     } catch (err) {
-        console.error("Error in getContestStats:", err);
-        res.status(500).json({ error: "Internal server error" });
+      console.warn(
+        `[Cache] Redis GET failed for ${fullCacheKey}:`,
+        err.message,
+      );
     }
+
+    const student = await Student.findOne({
+      codeforcesHandle: handle,
+    });
+
+    if (!student) {
+      return res.status(404).json({
+        error: "Student not found",
+      });
+    }
+
+    let filteredContests = student.contestData || [];
+
+    if (days !== "all") {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
+
+      filteredContests = filteredContests.filter(
+        (c) => new Date(c.ratingUpdateTimeSeconds * 1000) >= cutoffDate,
+      );
+    }
+
+    const submissions = student.submissions || [];
+
+    // PRECOMPUTE SOLVED COUNTS
+    const solvedByContest = {};
+
+    submissions.forEach((sub) => {
+      if (sub.verdict === "OK" && sub.problem?.contestId) {
+        const cid = sub.problem.contestId;
+
+        if (!solvedByContest[cid]) {
+          solvedByContest[cid] = new Set();
+        }
+
+        solvedByContest[cid].add(sub.problem.index);
+      }
+    });
+
+    const contestStats = [];
+
+    // Process sequentially but MUCH faster
+    for (const c of filteredContests) {
+      const date = new Date(c.ratingUpdateTimeSeconds * 1000)
+        .toISOString()
+        .split("T")[0];
+
+      // contest problem count cache
+      const totalProblems = await getProblemsInContest(c.contestId);
+
+      const solved = solvedByContest[c.contestId]?.size || 0;
+
+      contestStats.push({
+        contestId: c.contestId,
+        contestName: c.contestName,
+        date,
+        rank: c.rank,
+        oldRating: c.oldRating,
+        newRating: c.newRating,
+        ratingChange: c.newRating - c.oldRating,
+        solvedProblems: solved,
+        totalProblems,
+        unsolvedProblems: Math.max(totalProblems - solved, 0),
+      });
+    }
+
+    const response = {
+      contestStats,
+    };
+
+    // CACHE FINAL RESPONSE
+    try {
+      await redis.set(fullCacheKey, response, {
+        ex: 60 * 60 * 12, // 12h
+      });
+    } catch (err) {
+      console.warn(
+        `[Cache] Redis SET failed for ${fullCacheKey}:`,
+        err.message,
+      );
+    }
+
+    return res.json(response);
+  } catch (err) {
+    console.error("Error in getContestStats:", err);
+
+    return res.status(500).json({
+      error: "Internal server error",
+    });
+  }
 };
