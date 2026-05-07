@@ -217,7 +217,11 @@ export default function StudentTable({
       <header className="stats-header">
         <div className="stats-header__left">
           <div className="brand">
-            <span className="brand__dot" />
+            <img
+              src="/SkillSync-logo.png"
+              alt="SkillSync"
+              className="brand__logo"
+            />
             <span className="brand__name">SkillSync</span>
             <span className="brand__path">/ dashboard</span>
           </div>

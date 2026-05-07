@@ -1437,3 +1437,11 @@ tbody tr:hover {
     transform: translateY(0);
   }
 }
+
+.brand__logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
