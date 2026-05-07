@@ -8,7 +8,7 @@
 
 A full-stack analytics platform built to monitor, analyze, and visualize competitive programming progress using real-time Codeforces data, automated synchronization pipelines, Redis-backed caching, and performance insights.
 
-[Live Demo]([https://your-vercel-app.vercel.app](https://student-progress-tracker-pi.vercel.app/)) • [Documentation]([https://your-mintlify-docs.vercel.app](https://mintlify.wiki/aakash811/Student-Progress-Tracker))
+[🚀 Live Demo](https://student-progress-tracker-pi.vercel.app/) • [📚 Documentation](https://mintlify.wiki/aakash811/Student-Progress-Tracker)
 
 </div>
 
@@ -212,7 +212,7 @@ Student-Progress-Tracker/
 
 Full technical documentation available here:
 
-👉 https:[//your-mintlify-docs.vercel.app](https://mintlify.wiki/aakash811/Student-Progress-Tracker)
+👉 [SkillSync Documentation](https://mintlify.wiki/aakash811/Student-Progress-Tracker)
 
 ---
 
