@@ -1,121 +1,300 @@
-# Student Progress Management System 📊
+# SkillSync 📊
 
-A full-stack MERN application to track and analyze students' competitive programming progress on **Codeforces**, with daily sync, inactivity detection, rating statistics, submission heatmaps, and personalized dashboards.
+<div align="center">
 
----
+![SkillSync Banner](./frontend/src/assets/Student-Details.png)
 
-## 🚀 Features
+### Competitive Programming Analytics Platform for Student Performance Tracking
 
-- **Student CRUD**: Add, edit, delete, and view students.
-- **Codeforces Sync**: Automatically fetch Codeforces profile, contest, and submission data daily using a cron job.
-- **Manual Sync**: Option to manually trigger sync from the UI.
-- **Submission Heatmap**: Visualize submission activity over time.
-- **Contest History**: Chart rating changes and contest performance.
-- **Rating Buckets**: Distribution of solved problems by difficulty.
-- **Dark/Light Mode**: Toggle UI theme.
-- **Inactivity Detection**: Send reminder emails to inactive users.
-- **Responsive UI**: Built with TailwindCSS, Shadcn/UI, and Recharts.
-- **Editable Cron Settings**: Easily configure sync time and frequency.
+A full-stack analytics platform built to monitor, analyze, and visualize competitive programming progress using real-time Codeforces data, automated synchronization pipelines, Redis-backed caching, and performance insights.
+
+[Live Demo]([https://your-vercel-app.vercel.app](https://student-progress-tracker-pi.vercel.app/)) • [Documentation]([https://your-mintlify-docs.vercel.app](https://mintlify.wiki/aakash811/Student-Progress-Tracker))
+
+</div>
 
 ---
 
-## 🛠️ Tech Stack
+## ✨ Overview
 
-**Frontend**:
-- React + Vite
-- TailwindCSS + Shadcn/UI
-- Recharts (for charts)
+SkillSync is a production-style coding analytics dashboard designed to help students, mentors, and educators track competitive programming performance at scale.
+
+The platform combines:
+
+- 📈 Real-time analytics dashboards
+- ⚡ Redis-backed API caching
+- 🔄 Automated cron-based synchronization
+- 📊 Contest and submission insights
+- 🔥 Activity heatmaps and consistency tracking
+- 📧 Inactivity reminder pipelines
+- 🌙 Modern responsive SaaS-style UI
+
+---
+
+# 🚀 Core Features
+
+## 📊 Analytics Dashboard
+
+- Student performance overview
+- Contest rating progression
+- Problem difficulty distribution
+- Tag-based problem analysis
+- Submission activity heatmaps
+- Coding consistency metrics
+- Personalized coding insights
+
+---
+
+## ⚡ Performance Optimizations
+
+- Redis caching layer for Codeforces API data
+- Reduced API latency using intelligent caching
+- Background synchronization system
+- Optimized analytics aggregation
+- Efficient contest/submission processing
+
+---
+
+## 🔄 Automation System
+
+- Daily cron-based synchronization pipeline
+- Manual sync orchestration from dashboard
+- Automatic inactivity detection
+- Email reminder system for inactive users
+- Background sync execution
+
+---
+
+## 🎨 Modern Product UI
+
+- Responsive analytics dashboard
+- Dark / Light theme support
+- Interactive charts and visualizations
+- Smooth skeleton loading states
+- SaaS-inspired dashboard design
+- Real-time sync status indicators
+
+---
+
+# 🏗️ System Architecture
+
+<div align="center">
+
+![Architecture Diagram](./frontend/src/assets/Architecture-Diagram.png)
+
+</div>
+
+---
+
+# 📷 Dashboard Preview
+
+## Student Dashboard
+
+<div align="center">
+
+![Student Table](./frontend/src/assets/Students-Table.png)
+
+</div>
+
+---
+
+## Analytics & Performance Tracking
+
+<div align="center">
+
+![Analytics Dashboard](./frontend/src/assets/Student-Details.png)
+
+</div>
+
+---
+
+## Rating Progression & Contest Insights
+
+<div align="center">
+
+![Contest Analytics](./frontend/src/assets/Student-Graph.png)
+
+</div>
+
+---
+
+# 🛠️ Tech Stack
+
+## Frontend
+
+- React.js
+- Vite
+- TailwindCSS
+- shadcn/ui
+- Recharts
 - Axios
 
-**Backend**:
-- Node.js + Express
-- MongoDB + Mongoose
-- Node-cron (for scheduled tasks)
-- Nodemailer (for email alerts)
+---
+
+## Backend
+
+- Node.js
+- Express.js
+- MongoDB
+- Mongoose
+- Redis
+- Node-cron
+- Nodemailer
 - Codeforces Public API
 
 ---
 
-## 📁 Folder Structure
-```
-root/
-├── frontend/ # React UI
-│ ├── src/
-│ │ ├── components/ # UI components
-│ │ └── pages/ # Pages and routing
+# ⚙️ Engineering Highlights
+
+## 🔥 Redis-Based API Caching
+
+Implemented a Redis caching layer to reduce repetitive Codeforces API requests and improve dashboard response times significantly.
+
+---
+
+## 🔄 Background Sync Orchestration
+
+Built a cron-based synchronization engine capable of:
+- refreshing user analytics
+- invalidating stale cache
+- syncing contest history
+- updating submissions
+- triggering inactivity workflows
+
+---
+
+## 📈 Advanced Analytics Engine
+
+The analytics pipeline computes:
+- difficulty distributions
+- coding streaks
+- activity consistency
+- contest progression
+- tag-wise performance
+- acceptance rate metrics
+
+---
+
+## 📧 Inactivity Reminder System
+
+Integrated SMTP-based reminder workflows using Brevo and Nodemailer to notify inactive students automatically.
+
+---
+
+# 📂 Project Structure
+
+```bash
+Student-Progress-Tracker/
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── assets/
+│   │   └── lib/
+│   │
+│   └── public/
 │
 ├── backend/
-│ ├── controllers/ # API logic
-│ ├── routes/ # Express routes
-│ ├── services/ # Codeforces API service
-│ ├── cron/ # Codeforces sync cron job
-│ └── models/ # MongoDB data models
+│   ├── controllers/
+│   ├── cron/
+│   ├── models/
+│   ├── routes/
+│   ├── services/
+│   ├── utils/
+│   └── index.js
+│
+└── README.md
 ```
 
 ---
 
-## 📷 Demo Preview
+# 🌐 Documentation
 
-- Walkthrough Video: [![Watch the demo](https://cdn.loom.com/sessions/thumbnails/ed551d3497504b9483b3f057c23e2362-128251a3f29b14c9.jpg)](https://www.loom.com/share/ed551d3497504b9483b3f057c23e2362?sid=d0c5bdbc-3418-483e-b0f5-8f358cef05b2)
-- Students Table: ![Student Table](/frontend/src/assets/Students-Table.png)
-- Sample Student Dashboard: ![Student Dashboard](/frontend/src/assets/Student-Details.png)
-- Contest Rating Chart: ![Student Graph](/frontend/src/assets/Student-Graph.png)
+Full technical documentation available here:
+
+👉 https:[//your-mintlify-docs.vercel.app](https://mintlify.wiki/aakash811/Student-Progress-Tracker)
 
 ---
 
-## ⚙️ Setup Instructions
+# ⚙️ Setup Instructions
 
-### Prerequisites
+## Prerequisites
 
 - Node.js v18+
-- MongoDB (local or cloud)
+- MongoDB
+- Redis
 - Git
 
-### 1. Clone the repository
+---
+
+## 1️⃣ Clone Repository
 
 ```bash
 git clone https://github.com/yourusername/student-progress-tracker.git
+
 cd student-progress-tracker
 ```
 
-### 2. Setup the Backend
+---
+
+## 2️⃣ Backend Setup
+
 ```bash
 cd backend
-```        
+npm install
+```
 
-Create a .env file inside the backend/ directory with the following variables:
+Create `.env` file:
+
 ```env
 PORT=5000
-MONGODB_URI=your_mongodb_connection_string
-CODEFORCES_API_BASE=https://codeforces.com/api
-EMAIL_USER=your_email@example.com
+
+MONGODB_URI=your_mongodb_uri
+
+REDIS_URL=your_redis_url
+
+CRON_SECRET=your_secret
+
+EMAIL_USER=your_email
+
 EMAIL_PASS=your_email_password
 ```
-⚠️ Note: Never commit .env files to version control.
 
-Install backend dependencies:
+Run backend:
 
-```bash
-npm install
-```
-
-Start the backend server:
-```bash
-npx nodemon index.js
-```
-
-### 1. Setup the Frontend
-```bash
-cd ../frontend
-```
-Install frontend dependencies:
-```bash
-npm install
-```
-
-Start the frontend development server:
 ```bash
 npm run dev
 ```
 
-Now open your browser at http://localhost:5173 to view the app.
+---
+
+## 3️⃣ Frontend Setup
+
+```bash
+cd ../frontend
+npm install
+npm run dev
+```
+
+Frontend runs on:
+
+```txt
+http://localhost:5173
+```
+
+---
+
+# 🚀 Future Improvements
+
+- Multi-platform coding support (LeetCode, AtCoder, CodeChef)
+- Real-time WebSocket updates
+- AI-powered performance recommendations
+- Peer leaderboard system
+- Team analytics dashboard
+- Contest prediction insights
+
+---
+
+# 👨‍💻 Author
+
+Built by Aakash Borse
