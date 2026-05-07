@@ -148,6 +148,186 @@ const computeTagStats = (solvedProblems) => {
     .sort((a, b) => b.solved - a.solved);
 };
 
+const calculateConsistencyScore = (heatmap = {}) => {
+  const entries = Object.entries(heatmap);
+
+  if (!entries.length) return 0;
+
+  const activeDays = entries.filter(([_, value]) => value.total > 0).length;
+
+  const totalSubmissions = entries.reduce(
+    (sum, [_, value]) => sum + value.total,
+    0,
+  );
+
+  const avgPerDay = activeDays > 0 ? totalSubmissions / activeDays : 0;
+
+  let streak = 0;
+  let longestStreak = 0;
+
+  const sortedDates = entries
+    .map(([date]) => new Date(date))
+    .sort((a, b) => a - b);
+
+  for (let i = 1; i < sortedDates.length; i++) {
+    const diff = (sortedDates[i] - sortedDates[i - 1]) / (1000 * 60 * 60 * 24);
+
+    if (diff === 1) {
+      streak++;
+      longestStreak = Math.max(longestStreak, streak);
+    } else {
+      streak = 0;
+    }
+  }
+
+  const score = Math.min(
+    100,
+    Math.round(activeDays * 0.45 + avgPerDay * 12 + longestStreak * 2),
+  );
+  return score;
+};
+
+const buildSkillProgression = (solved) => {
+  const monthly = {};
+
+  solved.forEach((sub) => {
+    if (!sub.problem?.rating) return;
+
+    const date = new Date(sub.creationTimeSeconds * 1000);
+
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+      2,
+      "0",
+    )}`;
+
+    if (!monthly[key]) {
+      monthly[key] = {
+        totalRating: 0,
+        solved: 0,
+      };
+    }
+
+    monthly[key].totalRating += sub.problem.rating;
+    monthly[key].solved += 1;
+  });
+
+  return Object.entries(monthly)
+    .map(([month, data]) => ({
+      month,
+      avgRating: Math.round(data.totalRating / data.solved),
+      solved: data.solved,
+    }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+};
+
+const generatePersona = ({ consistencyScore, hardestRating, totalSolved }) => {
+  if (hardestRating >= 3000) {
+    return "Legendary Problem Hunter";
+  }
+
+  if (hardestRating >= 2200) {
+    return "High Difficulty Explorer";
+  }
+
+  if (consistencyScore >= 75) {
+    return "Consistency Grinder";
+  }
+
+  if (totalSolved >= 500) {
+    return "Dedicated Solver";
+  }
+
+  return "Casual Problem Solver";
+};
+
+const buildWeakTopics = (submissions) => {
+  const topicStats = {};
+
+  submissions.forEach((sub) => {
+    if (!sub.problem?.tags) return;
+
+    sub.problem.tags.forEach((tag) => {
+      if (!topicStats[tag]) {
+        topicStats[tag] = {
+          attempts: 0,
+          accepted: 0,
+        };
+      }
+
+      topicStats[tag].attempts++;
+
+      if (sub.verdict === "OK") {
+        topicStats[tag].accepted++;
+      }
+    });
+  });
+
+  return Object.entries(topicStats)
+    .map(([tag, stats]) => ({
+      tag,
+      acceptance:
+        stats.attempts > 0
+          ? Math.round((stats.accepted / stats.attempts) * 100)
+          : 0,
+      attempts: stats.attempts,
+    }))
+    .filter((t) => t.attempts >= 5)
+    .sort((a, b) => a.acceptance - b.acceptance)
+    .slice(0, 5);
+};
+
+const calculateLearningVelocity = (progression = []) => {
+  if (progression.length < 2) return 0;
+
+  const first = progression[0].avgRating;
+  const last = progression[progression.length - 1].avgRating;
+
+  return last - first;
+};
+
+const detectBurnoutRisk = (heatmap = {}) => {
+  const entries = Object.entries(heatmap)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([_, value]) => value.total);
+
+  if (entries.length < 14) return false;
+
+  const recent = entries.slice(-7).reduce((a, b) => a + b, 0);
+  const previous = entries.slice(-14, -7).reduce((a, b) => a + b, 0);
+
+  return previous > 0 && recent < previous * 0.5;
+};
+
+const predictRating = (currentRating, consistencyScore, learningVelocity) => {
+  return Math.round(
+    currentRating + consistencyScore * 0.8 + learningVelocity * 0.25,
+  );
+};
+
+const buildContestInsights = (contests = []) => {
+  if (!contests.length) {
+    return null;
+  }
+
+  const bestGain = [...contests].sort(
+    (a, b) => b.ratingChange - a.ratingChange,
+  )[0];
+
+  const worstDrop = [...contests].sort(
+    (a, b) => a.ratingChange - b.ratingChange,
+  )[0];
+
+  const avgRank = Math.round(
+    contests.reduce((s, c) => s + c.rank, 0) / contests.length,
+  );
+
+  return {
+    bestGain,
+    worstDrop,
+    avgRank,
+  };
+};
+
 exports.computeUserStats = async (handle, days = 30) => {
   const submissions = await fetchUserSubmission(handle);
   const filtered = filterByDate(submissions, days);
@@ -169,7 +349,33 @@ exports.computeUserStats = async (handle, days = 30) => {
   });
 
   const solvedProblems = Array.from(solvedMap.values());
+  const tagStats = computeTagStats(solvedProblems);
   const totalSolved = countUniqueProblems(solved);
+  const heatmap = generateHeatmap(filtered);
+
+  const hardest = mostDifficultProblem(solved);
+
+  const consistencyScore = calculateConsistencyScore(heatmap);
+
+  const persona = generatePersona({
+    consistencyScore,
+    hardestRating: hardest?.rating || 0,
+    totalSolved,
+  });
+
+  const skillProgression = buildSkillProgression(solved);
+
+  const weakTopics = buildWeakTopics(filtered);
+
+  const learningVelocity = calculateLearningVelocity(skillProgression);
+
+  const burnoutRisk = detectBurnoutRisk(heatmap);
+
+  const predictedRating = predictRating(
+    hardest?.rating || 0,
+    consistencyScore,
+    learningVelocity,
+  );
 
   const averageDays =
     days === "all"
@@ -184,16 +390,23 @@ exports.computeUserStats = async (handle, days = 30) => {
               (24 * 60 * 60 * 1000),
           ),
         )
-      : days;
+      : Number(days);
 
   return {
     totalSolved,
-    hardestProblem: mostDifficultProblem(solved),
+    hardestProblem: hardest,
     ratingBuckets: groupByRating(solved),
     averagePerDay: (totalSolved / averageDays).toFixed(2),
     totalSubmissions: filtered.length,
-    submissionHeatmap: generateHeatmap(filtered),
+    submissionHeatmap: heatmap,
     solvedProblems,
-    tagStats: computeTagStats(solvedProblems), // only new addition
+    tagStats,
+    consistencyScore,
+    persona,
+    skillProgression,
+    weakTopics,
+    learningVelocity,
+    burnoutRisk,
+    predictedRating,
   };
 };

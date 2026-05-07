@@ -35,10 +35,13 @@ import {
   ClipboardList,
   Flame,
   Gauge,
-  GraduationCap,
   Hash,
   LineChart as LineChartIcon,
   RefreshCw,
+  Target,
+  Info,
+  Brain,
+  TrendingUp,
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -67,16 +70,34 @@ const formatFilterLabel = (value) => {
 
 // ── Reusable components ───────────────────────────────────────────────────────
 
-const StatCard = ({ icon: Icon, label, value, sub, tone = "blue" }) => (
+const StatCard = ({ icon: Icon, label, value, sub, tone = "blue", info }) => (
   <div className="stat-card">
     <div className="stat-card__top">
-      <span>{label}</span>
+      <div className="stat-card__label">
+        <span>{label}</span>
+
+        {info && (
+          <>
+            <Info
+              size={13}
+              className="info-icon"
+              data-tooltip-id={`tooltip-${label}`}
+              data-tooltip-content={info}
+            />
+
+            <ReactTooltip id={`tooltip-${label}`} className="metric-tooltip" />
+          </>
+        )}
+      </div>
+
       {createElement(Icon, {
         className: `metric-icon metric-icon--${tone}`,
         size: 17,
       })}
     </div>
+
     <strong>{value ?? "—"}</strong>
+
     {sub && <p>{sub}</p>}
   </div>
 );
@@ -85,6 +106,21 @@ const HeaderRow = ({ title, children }) => (
   <div className="section-row">
     <h2>{title}</h2>
     {children}
+  </div>
+);
+
+const MetricCardSkeleton = () => (
+  <div className="stat-card skeleton-card">
+    <div className="skeleton-line skeleton-line--title" />
+    <div className="skeleton-line skeleton-line--value" />
+    <div className="skeleton-line skeleton-line--sub" />
+  </div>
+);
+
+const AnalyticsChipSkeleton = () => (
+  <div className="analytics-chip analytics-chip--skeleton">
+    <div className="chip-skeleton-icon" />
+    <div className="chip-skeleton-text" />
   </div>
 );
 
@@ -219,6 +255,7 @@ export default function StudentStats() {
   const [selectedDays, setSelectedDays] = useState("30");
   const [contestFilter, setContestFilter] = useState("3m");
   const [heatmapFilter, setHeatmapFilter] = useState("365");
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
   const [performanceLoading, setPerformanceLoading] = useState(true);
   const [activityLoading, setActivityLoading] = useState(true);
@@ -231,6 +268,7 @@ export default function StudentStats() {
   useEffect(() => {
     const fetch = async () => {
       setPerformanceLoading(true);
+      setAnalyticsLoading(true);
       try {
         const res = await axios.get(
           `${API_BASE}/api/codeforces/stats/${handle}?days=${selectedDays}`,
@@ -240,6 +278,9 @@ export default function StudentStats() {
         console.error(err);
       } finally {
         setPerformanceLoading(false);
+        setTimeout(() => {
+          setAnalyticsLoading(false);
+        }, 250);
       }
     };
     fetch();
@@ -422,6 +463,10 @@ export default function StudentStats() {
               >
                 {rankStyle.label}
               </em>
+              <span className="divider">/</span>
+              <div className="persona-badge">
+                {performanceStats?.persona || "Solver"}
+              </div>
             </div>
             <p>Student coding progress and Codeforces training signals</p>
           </div>
@@ -454,11 +499,10 @@ export default function StudentStats() {
             </SelectContent>
           </Select>
         </HeaderRow>
-
         {performanceLoading ? (
           <div className="metrics-grid">
             {Array.from({ length: 4 }).map((_, i) => (
-              <SectionSkeleton key={i} height={116} />
+              <MetricCardSkeleton key={i} />
             ))}
           </div>
         ) : (
@@ -469,6 +513,7 @@ export default function StudentStats() {
               value={performanceStats?.totalSolved}
               sub={`In the last ${selectedDays} days`}
               tone="green"
+              info="Number of unique Codeforces problems solved successfully in the selected time range."
             />
             <StatCard
               icon={Gauge}
@@ -476,6 +521,7 @@ export default function StudentStats() {
               value={performanceStats?.averagePerDay}
               sub="Solved problems per day"
               tone="blue"
+              info="Average number of problems solved per day during the selected period."
             />
             <StatCard
               icon={ClipboardList}
@@ -483,6 +529,7 @@ export default function StudentStats() {
               value={performanceStats?.totalSubmissions}
               sub="All attempts in this window"
               tone="orange"
+              info="Total number of submissions made in the selected time range, including both accepted and rejected attempts."
             />
             <StatCard
               icon={Award}
@@ -492,42 +539,64 @@ export default function StudentStats() {
                 performanceStats?.hardestProblem?.name || "No rated solve yet"
               }
               tone="violet"
+              info="Highest rated Codeforces problem solved successfully in the selected period."
             />
           </div>
         )}
 
-        {/* ── Insight strip (all-time, not affected by selectedDays) ── */}
-        <div className="insight-strip">
-          <StatCard
-            icon={Flame}
-            label="Current streak"
-            value={`${activitySummary.currentStreak}d`}
-            sub={`Best: ${activitySummary.longestStreak}d`}
-            tone="orange"
-          />
-          <StatCard
-            icon={CalendarDays}
-            label="Active days"
-            value={activitySummary.activeDays}
-            sub="Days with at least one submission"
-            tone="blue"
-          />
-          <StatCard
-            icon={Hash}
-            label="Acceptance rate"
-            value={`${activitySummary.acceptanceRate}%`}
-            sub="Accepted / total attempts"
-            tone="green"
-          />
-          <StatCard
-            icon={GraduationCap}
-            label="Next practice target"
-            value={nextTarget}
-            sub="Try problems just above your hardest solve"
-            tone="violet"
-          />
-        </div>
+        {analyticsLoading ? (
+          <div className="analytics-ribbon">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <AnalyticsChipSkeleton key={i} />
+            ))}
+          </div>
+        ) : (
+          <>
+            {/* ── Insight strip (all-time, not affected by selectedDays) ── */}
+            <div className="analytics-ribbon">
+              <div className="analytics-chip analytics-chip--orange">
+                <Flame size={14} />
+                <span>
+                  <strong>{activitySummary.currentStreak}d</strong> streak
+                </span>
+              </div>
 
+              <div className="analytics-chip analytics-chip--green">
+                <Hash size={14} />
+                <span>
+                  <strong>{activitySummary.acceptanceRate}%</strong> acceptance
+                </span>
+              </div>
+
+              <div className="analytics-chip analytics-chip--blue">
+                <Target size={14} />
+                <span>
+                  consistency score{" "}
+                  <strong>{performanceStats?.consistencyScore || 0}</strong>
+                </span>
+              </div>
+
+              <div className="analytics-chip analytics-chip--violet">
+                <Brain size={14} />
+                <span>
+                  predicted rating{" "}
+                  <strong>{performanceStats?.predictedRating || "—"}</strong>
+                </span>
+              </div>
+
+              <div className="analytics-chip analytics-chip--emerald">
+                <TrendingUp size={14} />
+                <span>
+                  learning velocity{" "}
+                  <strong>
+                    {performanceStats?.learningVelocity > 0 ? "+" : ""}
+                    {performanceStats?.learningVelocity || 0}
+                  </strong>
+                </span>
+              </div>
+            </div>
+          </>
+        )}
         {/* ── Analytics grid: stacked, full-width each panel ── */}
         <section className="analytics-grid">
           {/* Difficulty distribution */}
@@ -722,7 +791,6 @@ export default function StudentStats() {
             )}
           </div>
         </section>
-
         {/* ── Submission heatmap ── */}
         <section className="panel">
           <HeaderRow title="Submission Activity">
@@ -792,7 +860,6 @@ export default function StudentStats() {
             />
           )}
         </section>
-
         {/* ── Rating history chart ── */}
         <section className="panel">
           <HeaderRow title="Rating History">
@@ -853,7 +920,6 @@ export default function StudentStats() {
             />
           )}
         </section>
-
         {/* ── Contest history table ── */}
         <section className="panel table-panel">
           <HeaderRow

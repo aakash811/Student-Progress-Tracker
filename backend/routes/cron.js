@@ -1,6 +1,6 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { runCodeforcesSync } = require('../cron/codeforcesSyncCron');
+const { runCodeforcesSync } = require("../cron/codeforcesSyncCron");
 
 // ── POST /cron/sync ────────────────────────────────────────────────────────────
 // This is called by cron-job.org (or any external scheduler) on a schedule.
@@ -15,28 +15,48 @@ const { runCodeforcesSync } = require('../cron/codeforcesSyncCron');
 // Add to Render env vars:
 //   CRON_SECRET=any-long-random-string-you-choose
 
-router.post('/sync', async (req, res) => {
-    const secret = req.headers['x-cron-secret'];
-    if (secret !== process.env.CRON_SECRET) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
+router.post("/sync", async (req, res) => {
+  const secret = req.headers["x-cron-secret"];
+  if (secret !== process.env.CRON_SECRET) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 
-    try {
-        // Respond immediately so cron-job.org doesn't timeout (syncing takes time)
-        res.json({ message: 'Sync started', time: new Date() });
+  try {
+    // Respond immediately so cron-job.org doesn't timeout (syncing takes time)
+    res.json({ message: "Sync started", time: new Date() });
 
-        // Run sync after response is sent
-        await runCodeforcesSync();
-    } catch (err) {
-        console.error('[/cron/sync] Error:', err.message);
-    }
+    // Run sync after response is sent
+    await runCodeforcesSync();
+  } catch (err) {
+    console.error("[/cron/sync] Error:", err.message);
+  }
 });
 
 // ── GET /cron/ping ─────────────────────────────────────────────────────────────
 // Use a SECOND cron-job.org job hitting this every 14 minutes to keep
 // Render free tier warm and avoid the 10-second cold start on page load.
-router.get('/ping', (req, res) => {
-    res.json({ status: 'alive', time: new Date() });
+router.get("/ping", (req, res) => {
+  res.json({ status: "alive", time: new Date() });
+});
+
+router.post("/sync-all", async (req, res) => {
+  try {
+    console.log("[SYNC-ALL] Triggered manually");
+
+    res.json({
+      success: true,
+      message: "Sync started",
+    });
+
+    runCodeforcesSync();
+    console.log("[SYNC-ALL] Finished");
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+    });
+  }
 });
 
 module.exports = router;
