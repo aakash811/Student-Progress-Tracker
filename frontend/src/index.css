@@ -676,10 +676,13 @@
 }
 
 .dna-stat {
+  display: flex;
+  flex-direction: column;
   padding: 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: color-mix(in srgb, var(--card) 94%, transparent);
+  min-height: 120px;
 }
 
 .dna-stat span {
@@ -693,15 +696,17 @@
 
 .dna-stat strong {
   display: block;
+  color: var(--foreground);
   font-size: 22px;
   font-weight: 800;
   margin-bottom: 6px;
+  line-height: 1;
 }
 
 .dna-stat p {
+  margin-top: auto;
   color: var(--muted-foreground);
   font-size: 12px;
-  margin: 0;
 }
 
 .tag-chips {
@@ -734,60 +739,32 @@
   }
 }
 
-.difficulty-insights {
+.difficulty-breakdown {
+  margin-top: 20px;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.difficulty-pill {
-  padding: 12px;
+.difficulty-insight-card {
+  padding: 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: color-mix(in srgb, var(--card) 96%, transparent);
 }
 
-.difficulty-pill span {
+.difficulty-insight-card span {
   display: block;
+  margin-bottom: 10px;
   color: var(--muted-foreground);
   font-size: 11px;
   font-weight: 700;
-  margin-bottom: 8px;
   text-transform: uppercase;
 }
 
-.difficulty-pill strong {
-  font-size: 20px;
-  font-family: "JetBrains Mono", monospace;
+.difficulty-insight-card strong {
   color: var(--foreground);
-}
-
-.difficulty-summary {
-  margin-top: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.difficulty-summary__row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--card) 96%, transparent);
-}
-
-.difficulty-summary__row span {
-  color: var(--muted-foreground);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.difficulty-summary__row strong {
-  color: var(--foreground);
-  font-size: 13px;
+  font-size: 15px;
+  font-weight: 800;
   font-family: "JetBrains Mono", monospace;
 }

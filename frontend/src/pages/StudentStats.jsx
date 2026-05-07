@@ -11,12 +11,6 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-  PieChart,
-  Pie,
-  Cell,
-  ScatterChart,
-  Scatter,
-  ZAxis,
 } from "recharts";
 import ReactCalendarHeatmap from "react-calendar-heatmap";
 import "react-calendar-heatmap/dist/styles.css";
@@ -71,6 +65,8 @@ const formatFilterLabel = (value) => {
   return String(value);
 };
 
+// ── Reusable components ───────────────────────────────────────────────────────
+
 const StatCard = ({ icon: Icon, label, value, sub, tone = "blue" }) => (
   <div className="stat-card">
     <div className="stat-card__top">
@@ -80,7 +76,7 @@ const StatCard = ({ icon: Icon, label, value, sub, tone = "blue" }) => (
         size: 17,
       })}
     </div>
-    <strong>{value ?? "-"}</strong>
+    <strong>{value ?? "—"}</strong>
     {sub && <p>{sub}</p>}
   </div>
 );
@@ -114,7 +110,6 @@ const RatingChangePill = ({ change = 0 }) => (
 const CustomRatingTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
-
   return (
     <div className="chart-tooltip">
       <strong>{d.contestName}</strong>
@@ -128,29 +123,30 @@ const CustomRatingTooltip = ({ active, payload }) => {
   );
 };
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 const getFilterStartDate = (filter) => {
   const now = new Date();
   if (filter === "3m") {
-    const date = new Date();
-    date.setMonth(now.getMonth() - 3);
-    return date;
+    const d = new Date();
+    d.setMonth(now.getMonth() - 3);
+    return d;
   }
   if (filter === "6m") {
-    const date = new Date();
-    date.setMonth(now.getMonth() - 6);
-    return date;
+    const d = new Date();
+    d.setMonth(now.getMonth() - 6);
+    return d;
   }
   if (filter === "12m") {
-    const date = new Date();
-    date.setFullYear(now.getFullYear() - 1);
-    return date;
+    const d = new Date();
+    d.setFullYear(now.getFullYear() - 1);
+    return d;
   }
   return null;
 };
 
 const getHeatmapRange = (filter) => {
   const now = new Date();
-
   if (["90", "180", "365"].includes(filter)) {
     return {
       startDate: subDays(now, Number(filter) - 1),
@@ -158,11 +154,9 @@ const getHeatmapRange = (filter) => {
       label: `Last ${filter === "365" ? "12 months" : `${Number(filter) / 30} months`}`,
     };
   }
-
   const year = Number(filter);
   const endDate =
     year === now.getFullYear() ? now : new Date(`${year}-12-31T23:59:59`);
-
   return {
     startDate: new Date(`${year}-01-01T00:00:00`),
     endDate,
@@ -177,24 +171,24 @@ const getActivitySummary = (heatmap = {}) => {
       total: value.total || 0,
       correct: value.correct || 0,
     }))
-    .filter((entry) => entry.total > 0)
+    .filter((e) => e.total > 0)
     .sort((a, b) => new Date(a.date) - new Date(b.date));
 
   const activeDays = entries.length;
-  const totalSubmissions = entries.reduce((sum, entry) => sum + entry.total, 0);
-  const accepted = entries.reduce((sum, entry) => sum + entry.correct, 0);
-  const activeSet = new Set(entries.map((entry) => entry.date));
+  const totalSubmissions = entries.reduce((s, e) => s + e.total, 0);
+  const accepted = entries.reduce((s, e) => s + e.correct, 0);
+  const activeSet = new Set(entries.map((e) => e.date));
 
   let currentStreak = 0;
   for (let date = new Date(); ; date = new Date(date.getTime() - DAY)) {
     const key = date.toISOString().split("T")[0];
     if (!activeSet.has(key)) break;
-    currentStreak += 1;
+    currentStreak++;
   }
 
-  let longestStreak = 0;
-  let streak = 0;
-  let previous = null;
+  let longestStreak = 0,
+    streak = 0,
+    previous = null;
   entries.forEach((entry) => {
     const current = new Date(entry.date);
     streak =
@@ -212,6 +206,8 @@ const getActivitySummary = (heatmap = {}) => {
       : 0,
   };
 };
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 export default function StudentStats() {
   const { theme } = useTheme();
@@ -231,8 +227,9 @@ export default function StudentStats() {
 
   const isDark = theme === "dark";
 
+  // Fetch performance stats (respects selectedDays filter)
   useEffect(() => {
-    const fetchPerformance = async () => {
+    const fetch = async () => {
       setPerformanceLoading(true);
       try {
         const res = await axios.get(
@@ -240,16 +237,17 @@ export default function StudentStats() {
         );
         setPerformanceStats(res.data);
       } catch (err) {
-        console.error("Error fetching stats:", err);
+        console.error(err);
       } finally {
         setPerformanceLoading(false);
       }
     };
-    fetchPerformance();
+    fetch();
   }, [handle, selectedDays]);
 
+  // Fetch all-time activity (for heatmap + streak — fetched once)
   useEffect(() => {
-    const fetchActivity = async () => {
+    const fetch = async () => {
       setActivityLoading(true);
       try {
         const res = await axios.get(
@@ -257,16 +255,17 @@ export default function StudentStats() {
         );
         setActivityStats(res.data);
       } catch (err) {
-        console.error("Error fetching activity:", err);
+        console.error(err);
       } finally {
         setActivityLoading(false);
       }
     };
-    fetchActivity();
+    fetch();
   }, [handle]);
 
+  // Fetch all-time contests (filtered client-side)
   useEffect(() => {
-    const fetchContests = async () => {
+    const fetch = async () => {
       setContestLoading(true);
       try {
         const res = await axios.get(
@@ -274,40 +273,41 @@ export default function StudentStats() {
         );
         setContestData(res.data.contestStats || []);
       } catch (err) {
-        console.error("Error fetching contests:", err);
+        console.error(err);
       } finally {
         setContestLoading(false);
       }
     };
-    fetchContests();
+    fetch();
   }, [handle]);
 
-  const contestYears = useMemo(() => {
-    return [...new Set(contestData.map((c) => new Date(c.date).getFullYear()))]
-      .filter(Boolean)
-      .sort((a, b) => b - a);
-  }, [contestData]);
+  const contestYears = useMemo(
+    () =>
+      [...new Set(contestData.map((c) => new Date(c.date).getFullYear()))]
+        .filter(Boolean)
+        .sort((a, b) => b - a),
+    [contestData],
+  );
 
-  const heatmapYears = useMemo(() => {
-    return [
-      ...new Set(
-        Object.keys(activityStats?.submissionHeatmap || {}).map((date) =>
-          new Date(date).getFullYear(),
+  const heatmapYears = useMemo(
+    () =>
+      [
+        ...new Set(
+          Object.keys(activityStats?.submissionHeatmap || {}).map((d) =>
+            new Date(d).getFullYear(),
+          ),
         ),
-      ),
-    ]
-      .filter(Boolean)
-      .sort((a, b) => b - a);
-  }, [activityStats]);
+      ]
+        .filter(Boolean)
+        .sort((a, b) => b - a),
+    [activityStats],
+  );
 
   const filteredContests = useMemo(() => {
     if (contestFilter === "all") return contestData;
-
     const startDate = getFilterStartDate(contestFilter);
-    if (startDate) {
+    if (startDate)
       return contestData.filter((c) => new Date(c.date) >= startDate);
-    }
-
     return contestData.filter(
       (c) => new Date(c.date).getFullYear() === Number(contestFilter),
     );
@@ -321,21 +321,28 @@ export default function StudentStats() {
   const heatmapValues = useMemo(() => {
     const start = heatmapRange.startDate.getTime();
     const end = heatmapRange.endDate.getTime();
-
     return Object.entries(activityStats?.submissionHeatmap || {})
       .map(([date, { total, correct }]) => ({ date, total, correct }))
-      .filter((value) => {
-        const time = new Date(value.date).getTime();
-        return time >= start && time <= end;
+      .filter((v) => {
+        const t = new Date(v.date).getTime();
+        return t >= start && t <= end;
       });
   }, [activityStats, heatmapRange]);
 
-  const difficultyData = useMemo(() => {
-    return Object.entries(performanceStats?.ratingBuckets || {})
-      .filter(([rating, count]) => Number(rating) > 0 && count > 0)
-      .sort((a, b) => Number(a[0]) - Number(b[0]))
-      .map(([rating, count]) => ({ rating, count }));
-  }, [performanceStats]);
+  const difficultyData = useMemo(
+    () =>
+      Object.entries(performanceStats?.ratingBuckets || {})
+        .filter(([rating, count]) => Number(rating) > 0 && count > 0)
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
+        .map(([rating, count]) => ({ rating, count })),
+    [performanceStats],
+  );
+
+  // tagStats now comes from backend — real data derived from submissions
+  const tagData = useMemo(
+    () => (performanceStats?.tagStats || []).slice(0, 15),
+    [performanceStats],
+  );
 
   const activitySummary = useMemo(
     () => getActivitySummary(activityStats?.submissionHeatmap),
@@ -345,12 +352,11 @@ export default function StudentStats() {
   const rankStyle = getRankStyle(
     contestData.length ? contestData[contestData.length - 1]?.newRating : 0,
   );
-
   const hardestRating = performanceStats?.hardestProblem?.rating;
   const nextTarget = hardestRating
     ? `${Math.ceil((hardestRating + 1) / 100) * 100}`
-    : "-";
-  const hasHeatmapData = heatmapValues.some((value) => value.total > 0);
+    : "—";
+  const hasHeatmapData = heatmapValues.some((v) => v.total > 0);
   const fullPageLoading =
     performanceLoading &&
     activityLoading &&
@@ -367,73 +373,20 @@ export default function StudentStats() {
     },
   };
 
-  const tagAnalysis = useMemo(() => {
-    const tagMap = {};
-
-    const submissions = performanceStats?.solvedProblems || [];
-
-    submissions.forEach((problem) => {
-      if (!problem.tags) return;
-
-      problem.tags.forEach((tag) => {
-        if (!tagMap[tag]) {
-          tagMap[tag] = {
-            tag,
-            solved: 0,
-            totalRating: 0,
-            maxRating: 0,
-          };
-        }
-
-        tagMap[tag].solved += 1;
-
-        if (problem.rating) {
-          tagMap[tag].totalRating += problem.rating;
-          tagMap[tag].maxRating = Math.max(
-            tagMap[tag].maxRating,
-            problem.rating,
-          );
-        }
-      });
-    });
-
-    const tags = Object.values(tagMap)
-      .map((tag) => ({
-        ...tag,
-        averageRating: tag.solved
-          ? Math.round(tag.totalRating / tag.solved)
-          : 0,
-      }))
-      .sort((a, b) => b.solved - a.solved);
-
-    const strongestTag = tags[0];
-
-    const weakestTag = [...tags]
-      .filter((t) => t.solved >= 3)
-      .sort((a, b) => a.averageRating - b.averageRating)[0];
-
-    return {
-      tags,
-      strongestTag,
-      weakestTag,
-      diversityScore: tags.length,
-    };
-  }, [performanceStats]);
-
   const manualSync = async () => {
     setSyncing(true);
     try {
       await axios.get(`${API_BASE}/api/codeforces/sync/${handle}`);
-      const [performanceRes, activityRes, contestRes] = await Promise.all([
+      const [perfRes, actRes, conRes] = await Promise.all([
         axios.get(
           `${API_BASE}/api/codeforces/stats/${handle}?days=${selectedDays}`,
         ),
         axios.get(`${API_BASE}/api/codeforces/stats/${handle}?days=all`),
         axios.get(`${API_BASE}/api/codeforces/contest/${handle}?days=all`),
       ]);
-      setPerformanceStats(performanceRes.data);
-      setActivityStats(activityRes.data);
-      setContestData(contestRes.data.contestStats || []);
+      setPerformanceStats(perfRes.data);
+      setActivityStats(actRes.data);
+      setContestData(conRes.data.contestStats || []);
     } catch (err) {
       console.error("Sync failed:", err);
     } finally {
@@ -441,17 +394,17 @@ export default function StudentStats() {
     }
   };
 
-  if (fullPageLoading) {
+  if (fullPageLoading)
     return (
       <div className="stats-loader">
         <div />
         <p>Fetching {handle}...</p>
       </div>
     );
-  }
 
   return (
     <div className="student-stats-page">
+      {/* ── Header ── */}
       <header className="stats-header">
         <div className="stats-header__left">
           <Link to="/" className="back-link">
@@ -487,6 +440,7 @@ export default function StudentStats() {
       </header>
 
       <main className="stats-shell">
+        {/* ── Performance Overview ── */}
         <HeaderRow title="Performance Overview">
           <Select value={selectedDays} onValueChange={setSelectedDays}>
             <SelectTrigger className="compact-select">
@@ -503,8 +457,8 @@ export default function StudentStats() {
 
         {performanceLoading ? (
           <div className="metrics-grid">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <SectionSkeleton key={index} height={116} />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SectionSkeleton key={i} height={116} />
             ))}
           </div>
         ) : (
@@ -533,7 +487,7 @@ export default function StudentStats() {
             <StatCard
               icon={Award}
               label="Hardest solved"
-              value={hardestRating || "-"}
+              value={hardestRating || "—"}
               sub={
                 performanceStats?.hardestProblem?.name || "No rated solve yet"
               }
@@ -542,12 +496,13 @@ export default function StudentStats() {
           </div>
         )}
 
+        {/* ── Insight strip (all-time, not affected by selectedDays) ── */}
         <div className="insight-strip">
           <StatCard
             icon={Flame}
             label="Current streak"
             value={`${activitySummary.currentStreak}d`}
-            sub={`Best streak: ${activitySummary.longestStreak}d`}
+            sub={`Best: ${activitySummary.longestStreak}d`}
             tone="orange"
           />
           <StatCard
@@ -561,7 +516,7 @@ export default function StudentStats() {
             icon={Hash}
             label="Acceptance rate"
             value={`${activitySummary.acceptanceRate}%`}
-            sub="Accepted submissions over attempts"
+            sub="Accepted / total attempts"
             tone="green"
           />
           <StatCard
@@ -573,14 +528,16 @@ export default function StudentStats() {
           />
         </div>
 
+        {/* ── Analytics grid: stacked, full-width each panel ── */}
         <section className="analytics-grid">
+          {/* Difficulty distribution */}
           <div className="panel">
             <HeaderRow title="Problems by Difficulty" />
             {performanceLoading ? (
               <SectionSkeleton height={276} />
             ) : difficultyData.length ? (
               <>
-                <ResponsiveContainer width="100%" height={276}>
+                <ResponsiveContainer width="100%" height={240}>
                   <BarChart
                     data={difficultyData}
                     margin={{ top: 10, right: 8, bottom: 0, left: -18 }}
@@ -611,75 +568,48 @@ export default function StudentStats() {
                     <Bar dataKey="count" fill="#2563eb" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
-                <div className="difficulty-insights">
-                  <div className="difficulty-pill">
-                    <span>Most Solved</span>
+
+                <div className="difficulty-breakdown">
+                  <div className="difficulty-insight-card">
+                    <span>Average Solved Rating</span>
                     <strong>
                       {difficultyData.length
-                        ? `${
-                            difficultyData.reduce((a, b) =>
-                              a.count > b.count ? a : b,
-                            ).rating
-                          }+`
+                        ? Math.round(
+                            difficultyData.reduce(
+                              (sum, bucket) =>
+                                sum + Number(bucket.rating) * bucket.count,
+                              0,
+                            ) /
+                              difficultyData.reduce(
+                                (sum, bucket) => sum + bucket.count,
+                                0,
+                              ),
+                          )
                         : "-"}
                     </strong>
                   </div>
 
-                  <div className="difficulty-pill">
-                    <span>Peak Difficulty</span>
+                  <div className="difficulty-insight-card">
+                    <span>Peak Problem Rating</span>
                     <strong>{hardestRating || "-"}</strong>
                   </div>
 
-                  <div className="difficulty-pill">
-                    <span>Difficulty Spread</span>
-                    <strong>{difficultyData.length}</strong>
-                  </div>
-                </div>
-
-                <div className="difficulty-summary">
-                  <div className="difficulty-summary__row">
-                    <span>Most Comfortable Range</span>
+                  <div className="difficulty-insight-card">
+                    <span>Advanced Problems</span>
                     <strong>
-                      {difficultyData.length
-                        ? `${
-                            difficultyData.reduce((a, b) =>
-                              a.count > b.count ? a : b,
-                            ).rating
-                          }-${
-                            Number(
-                              difficultyData.reduce((a, b) =>
-                                a.count > b.count ? a : b,
-                              ).rating,
-                            ) + 99
-                          }`
-                        : "-"}
+                      {difficultyData
+                        .filter((bucket) => Number(bucket.rating) >= 1800)
+                        .reduce((sum, bucket) => sum + bucket.count, 0)}
                     </strong>
                   </div>
 
-                  <div className="difficulty-summary__row">
-                    <span>Estimated Skill Ceiling</span>
-                    <strong>{hardestRating || "-"}</strong>
-                  </div>
-
-                  <div className="difficulty-summary__row">
-                    <span>Problem Distribution</span>
+                  <div className="difficulty-insight-card">
+                    <span>Rating Coverage</span>
                     <strong>
-                      {difficultyData.length > 6
-                        ? "Broad"
-                        : difficultyData.length > 3
-                          ? "Balanced"
-                          : "Focused"}
-                    </strong>
-                  </div>
-
-                  <div className="difficulty-summary__row">
-                    <span>Practice Pattern</span>
-                    <strong>
-                      {activitySummary.currentStreak >= 10
-                        ? "Consistent Grinder"
-                        : activitySummary.currentStreak >= 4
-                          ? "Regular Solver"
-                          : "Occasional Practice"}
+                      {difficultyData[0]?.rating || "-"}–
+                      {[...difficultyData].sort(
+                        (a, b) => Number(b.rating) - Number(a.rating),
+                      )[0]?.rating || "-"}
                     </strong>
                   </div>
                 </div>
@@ -693,113 +623,107 @@ export default function StudentStats() {
             )}
           </div>
 
+          {/* Topic breakdown — horizontal bar, real tagStats from backend */}
           <div className="panel">
-            <HeaderRow title="Problem Solving DNA" />
+            <HeaderRow title="Topic Breakdown" />
             {performanceLoading ? (
-              <SectionSkeleton height={520} />
-            ) : tagAnalysis.tags.length ? (
+              <SectionSkeleton height={360} />
+            ) : tagData.length ? (
               <>
                 <div className="dna-top">
                   <div className="dna-stat">
-                    <span>Strongest Topic</span>
-                    <strong>{tagAnalysis.strongestTag?.tag}</strong>
+                    <span>Most solved topic</span>
+                    <strong>{tagData[0]?.tag}</strong>
                     <p>
-                      {tagAnalysis.strongestTag?.solved} solved • Avg{" "}
-                      {tagAnalysis.strongestTag?.averageRating}
+                      {tagData[0]?.solved} solved · avg {tagData[0]?.avgRating}
                     </p>
                   </div>
-
                   <div className="dna-stat">
-                    <span>Needs Improvement</span>
-                    <strong>{tagAnalysis.weakestTag?.tag || "Balanced"}</strong>
+                    <span>Highest avg difficulty</span>
+                    <strong>
+                      {[...tagData].sort((a, b) => b.avgRating - a.avgRating)[0]
+                        ?.tag || "—"}
+                    </strong>
                     <p>
-                      Avg {tagAnalysis.weakestTag?.averageRating || "-"}{" "}
-                      difficulty
+                      avg rating{" "}
+                      {[...tagData].sort((a, b) => b.avgRating - a.avgRating)[0]
+                        ?.avgRating || "—"}
                     </p>
                   </div>
-
                   <div className="dna-stat">
-                    <span>Topic Diversity</span>
-                    <strong>{tagAnalysis.diversityScore}</strong>
+                    <span>Topic diversity</span>
+                    <strong>{tagData.length} topics</strong>
                     <p>Unique problem-solving domains</p>
                   </div>
                 </div>
 
-                <ResponsiveContainer width="100%" height={320}>
-                  <ScatterChart
-                    margin={{ top: 20, right: 20, bottom: 10, left: 0 }}
+                {/* Horizontal bar — solved count per tag, sorted descending */}
+                <ResponsiveContainer
+                  width="100%"
+                  height={Math.min(tagData.length * 30 + 20, 420)}
+                >
+                  <BarChart
+                    data={tagData}
+                    layout="vertical"
+                    margin={{ top: 4, right: 48, bottom: 4, left: 4 }}
                   >
-                    <CartesianGrid stroke={chartColors.grid} />
-
+                    <CartesianGrid
+                      stroke={chartColors.grid}
+                      horizontal={false}
+                    />
                     <XAxis
                       type="number"
-                      dataKey="averageRating"
-                      name="Average Rating"
-                      tick={{ fill: chartColors.axis, fontSize: 11 }}
+                      tick={{ fontSize: 11, fill: chartColors.axis }}
                       tickLine={false}
                       axisLine={false}
+                      allowDecimals={false}
                     />
-
                     <YAxis
                       type="category"
                       dataKey="tag"
-                      tick={{ fill: chartColors.axis, fontSize: 11 }}
+                      width={130}
+                      tick={{ fontSize: 11, fill: chartColors.axis }}
                       tickLine={false}
                       axisLine={false}
-                      width={90}
                     />
-
-                    <ZAxis type="number" dataKey="solved" range={[80, 900]} />
-
                     <Tooltip
-                      cursor={{ strokeDasharray: "3 3" }}
                       contentStyle={{
                         background: chartColors.tooltip.background,
                         border: `1px solid ${chartColors.tooltip.border}`,
-                        borderRadius: 10,
+                        borderRadius: 8,
                         color: chartColors.tooltip.color,
                         fontSize: 12,
-                        fontFamily: '"JetBrains Mono", monospace',
                       }}
-                      labelStyle={{
-                        color: chartColors.tooltip.color,
-                        fontWeight: 700,
-                        marginBottom: 6,
-                      }}
-                      itemStyle={{
-                        color: chartColors.tooltip.color,
-                      }}
-                      formatter={(value, name) => [value, name]}
+                      formatter={(value, _, props) => [
+                        `${value} solved · avg ${props.payload.avgRating}`,
+                        "Topic",
+                      ]}
+                      cursor={{ fill: "rgba(124,58,237,0.06)" }}
                     />
-
-                    <Scatter
-                      data={tagAnalysis.tags.slice(0, 15)}
+                    <Bar
+                      dataKey="solved"
                       fill="#7c3aed"
-                      animationDuration={900}
-                      animationEasing="ease-out"
+                      radius={[0, 4, 4, 0]}
+                      label={{
+                        position: "right",
+                        fontSize: 11,
+                        fill: chartColors.axis,
+                      }}
                     />
-                  </ScatterChart>
+                  </BarChart>
                 </ResponsiveContainer>
-
-                <div className="tag-chips">
-                  {tagAnalysis.tags.slice(0, 12).map((tag) => (
-                    <div key={tag.tag} className="tag-chip">
-                      <span>{tag.tag}</span>
-                      <strong>{tag.solved}</strong>
-                    </div>
-                  ))}
-                </div>
               </>
             ) : (
               <EmptyState
                 icon={Hash}
-                title="No tag analytics available"
-                message="Start solving tagged problems to unlock insights."
+                title="No topic data yet"
+                message={`Solve tagged problems in the last ${selectedDays} days to see breakdown.`}
               />
             )}
           </div>
         </section>
 
+        {/* ── Submission heatmap ── */}
         <section className="panel">
           <HeaderRow title="Submission Activity">
             <Select value={heatmapFilter} onValueChange={setHeatmapFilter}>
@@ -838,7 +762,7 @@ export default function StudentStats() {
                   if (!value?.date) return null;
                   return {
                     "data-tooltip-id": "heatmap-tooltip",
-                    "data-tooltip-content": `${value.date} - ${value.total || 0} submissions - ${value.correct || 0} accepted`,
+                    "data-tooltip-content": `${value.date} — ${value.total || 0} submissions, ${value.correct || 0} accepted`,
                   };
                 }}
               />
@@ -864,11 +788,12 @@ export default function StudentStats() {
             <EmptyState
               icon={CalendarDays}
               title="No submissions in this time frame"
-              message={`No activity was found for ${heatmapRange.label.toLowerCase()}.`}
+              message={`No activity found for ${heatmapRange.label.toLowerCase()}.`}
             />
           )}
         </section>
 
+        {/* ── Rating history chart ── */}
         <section className="panel">
           <HeaderRow title="Rating History">
             <Select value={contestFilter} onValueChange={setContestFilter}>
@@ -924,14 +849,15 @@ export default function StudentStats() {
             <EmptyState
               icon={LineChartIcon}
               title="No contests in this time frame"
-              message={`There are no rated contests in ${formatFilterLabel(contestFilter)}.`}
+              message={`No rated contests found in ${formatFilterLabel(contestFilter)}.`}
             />
           )}
         </section>
 
+        {/* ── Contest history table ── */}
         <section className="panel table-panel">
           <HeaderRow
-            title={`Contest History - ${formatFilterLabel(contestFilter)}`}
+            title={`Contest History — ${formatFilterLabel(contestFilter)}`}
           />
           {contestLoading ? (
             <SectionSkeleton height={220} />
@@ -941,8 +867,8 @@ export default function StudentStats() {
                 <thead>
                   <tr>
                     {["Contest", "Date", "Rank", "Rating Change", "Solved"].map(
-                      (heading) => (
-                        <th key={heading}>{heading}</th>
+                      (h) => (
+                        <th key={h}>{h}</th>
                       ),
                     )}
                   </tr>
@@ -967,10 +893,17 @@ export default function StudentStats() {
                           <RatingChangePill change={contest.ratingChange} />
                         </span>
                       </td>
+                      {/* Solved column: shows X/Y format. totalProblems requires
+                          codeforcesController.js to include it in contestStats.
+                          If not present, shows the unsolved count as fallback. */}
                       <td>
-                        {contest.totalProblems ? (
+                        {contest.totalProblems > 0 ? (
                           <span className="solved-pill">
                             {contest.solvedProblems}/{contest.totalProblems}
+                          </span>
+                        ) : contest.solvedProblems > 0 ? (
+                          <span className="solved-pill solved-pill--clean">
+                            {contest.solvedProblems} solved
                           </span>
                         ) : (
                           <span className="muted">Not tracked</span>
@@ -985,7 +918,7 @@ export default function StudentStats() {
             <EmptyState
               icon={LineChartIcon}
               title="No contests in this time frame"
-              message={`There are no contest rows for ${formatFilterLabel(contestFilter)}.`}
+              message={`No contest rows for ${formatFilterLabel(contestFilter)}.`}
             />
           )}
         </section>

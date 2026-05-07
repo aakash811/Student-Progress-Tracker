@@ -1,37 +1,25 @@
 const axios = require("axios");
 const { Redis } = require("@upstash/redis");
 
-// ── Upstash Redis client ──────────────────────────────────────────────────────
-// Requires two env vars in Render:
-//   UPSTASH_REDIS_REST_URL   → from Upstash console → REST API → URL
-//   UPSTASH_REDIS_REST_TOKEN → from Upstash console → REST API → Token
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL,
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
-// Cache TTL constants (seconds)
-const TTL_USER_INFO = 60 * 60 * 6; // 6 hours  — rating/rank changes rarely
-const TTL_CONTESTS = 60 * 60 * 6; // 6 hours
-const TTL_SUBMISSIONS = 60 * 60 * 2; // 2 hours  — submissions change more often
+const TTL_USER_INFO = 60 * 60 * 6;
+const TTL_CONTESTS = 60 * 60 * 6;
+const TTL_SUBMISSIONS = 60 * 60 * 2;
 
-// ── Fix: BASE_URL must NOT end with slash ────────────────────────────────────
-// Previously was "https://codeforces.com/api/" which caused double-slash URLs
-// like /api//user.info — Codeforces returns 404 for those intermittently.
 const BASE_URL = "https://codeforces.com/api";
 
-// ── Generic cached fetch helper ───────────────────────────────────────────────
-// Checks Redis first. On miss, calls fetcher(), stores result, returns it.
 const cachedFetch = async (cacheKey, ttl, fetcher) => {
   try {
     const cached = await redis.get(cacheKey);
     if (cached) {
       console.log(`[Cache HIT] ${cacheKey}`);
-      // Upstash REST returns already-parsed JSON
       return cached;
     }
   } catch (err) {
-    // Redis failure should never break the app — fall through to live fetch
     console.warn(`[Cache] Redis GET failed for ${cacheKey}:`, err.message);
   }
 
@@ -46,8 +34,6 @@ const cachedFetch = async (cacheKey, ttl, fetcher) => {
 
   return data;
 };
-
-// ── Codeforces API fetchers ───────────────────────────────────────────────────
 
 exports.fetchUserInfo = async (handle) => {
   return cachedFetch(`cf:info:${handle}`, TTL_USER_INFO, async () => {
@@ -73,8 +59,6 @@ const fetchUserSubmission = async (handle) => {
 };
 exports.fetchUserSubmission = fetchUserSubmission;
 
-// ── Cache invalidation — call this after a manual sync ───────────────────────
-// So the next page load reflects fresh data immediately.
 exports.invalidateUserCache = async (handle) => {
   try {
     await Promise.all([
@@ -87,8 +71,6 @@ exports.invalidateUserCache = async (handle) => {
     console.warn(`[Cache] Invalidation failed for ${handle}:`, err.message);
   }
 };
-
-// ── Stats computation (unchanged logic, no caching needed — computed locally) ─
 
 const filterByDate = (submissions, days) => {
   if (days === "all") return submissions;
@@ -139,20 +121,44 @@ const generateHeatmap = (submissions) => {
   return heatmap;
 };
 
+// ── Compute tag stats from deduplicated solved problems ───────────────────────
+// Input: solvedProblems array already built in computeUserStats
+// Each entry: { name, rating, tags[] }
+// Returns: [ { tag, solved, avgRating, maxRating } ] sorted by solved desc
+const computeTagStats = (solvedProblems) => {
+  const tagMap = {};
+  solvedProblems.forEach((problem) => {
+    (problem.tags || []).forEach((tag) => {
+      if (!tagMap[tag])
+        tagMap[tag] = { tag, solved: 0, totalRating: 0, maxRating: 0 };
+      tagMap[tag].solved += 1;
+      if (problem.rating) {
+        tagMap[tag].totalRating += problem.rating;
+        tagMap[tag].maxRating = Math.max(tagMap[tag].maxRating, problem.rating);
+      }
+    });
+  });
+  return Object.values(tagMap)
+    .map((t) => ({
+      tag: t.tag,
+      solved: t.solved,
+      avgRating: t.solved ? Math.round(t.totalRating / t.solved) : 0,
+      maxRating: t.maxRating,
+    }))
+    .sort((a, b) => b.solved - a.solved);
+};
+
 exports.computeUserStats = async (handle, days = 30) => {
   const submissions = await fetchUserSubmission(handle);
   const filtered = filterByDate(submissions, days);
   const solved = filtered.filter((sub) => sub.verdict === "OK");
 
+  // Deduplicate solved problems — your original logic, unchanged
   const solvedMap = new Map();
-
   solved.forEach((sub) => {
     const problem = sub.problem;
-
     if (!problem) return;
-
     const key = `${problem.contestId}-${problem.index}`;
-
     if (!solvedMap.has(key)) {
       solvedMap.set(key, {
         name: problem.name,
@@ -163,8 +169,8 @@ exports.computeUserStats = async (handle, days = 30) => {
   });
 
   const solvedProblems = Array.from(solvedMap.values());
-
   const totalSolved = countUniqueProblems(solved);
+
   const averageDays =
     days === "all"
       ? Math.max(
@@ -188,5 +194,6 @@ exports.computeUserStats = async (handle, days = 30) => {
     totalSubmissions: filtered.length,
     submissionHeatmap: generateHeatmap(filtered),
     solvedProblems,
+    tagStats: computeTagStats(solvedProblems), // only new addition
   };
 };

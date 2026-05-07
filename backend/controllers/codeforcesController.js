@@ -130,7 +130,8 @@ exports.syncCodeforcesData = async (req, res) => {
 exports.getCodeforcesStats = async (req, res) => {
   try {
     const handle = req.params.handle;
-    const days = req.query.days === "all" ? "all" : parseInt(req.query.days) || 30;
+    const days =
+      req.query.days === "all" ? "all" : parseInt(req.query.days) || 30;
     const userStats = await codeforcesService.computeUserStats(handle, days);
     res.json(userStats);
   } catch (err) {
